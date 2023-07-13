@@ -158,3 +158,15 @@ Feel free to click on the link and explore the paper for a comprehensive underst
 
 ## Contact
 For any additional questions, you can reach me at leonardo.felizardo@usp.br
+
+
+## References
+
+This works employed the environment provided in our previous work:
+
+(Discrete lot-sizing)[https://github.com/EdoF90/discrete_lot_sizing]
+
+and we modify the ppo implementation in pytorch of:
+
+(PPO-Pytorch)[https://github.com/nikhilbarhate99/PPO-PyTorch]
+
