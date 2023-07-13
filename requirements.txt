@@ -1,0 +1,4 @@
+gym==0.18.0
+numpy==1.21.2
+matplotlib==3.4.3
+torch==1.9.0
