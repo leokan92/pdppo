@@ -164,9 +164,9 @@ For any additional questions, you can reach me at leonardo.felizardo@usp.br
 
 This works employed the environment provided in our previous work:
 
-(Discrete lot-sizing)[https://github.com/EdoF90/discrete_lot_sizing]
+[Discrete lot-sizing](https://github.com/EdoF90/discrete_lot_sizing)
 
 and we modify the ppo implementation in pytorch of:
 
-(PPO-Pytorch)[https://github.com/nikhilbarhate99/PPO-PyTorch]
+[PPO-Pytorch](https://github.com/nikhilbarhate99/PPO-PyTorch)
 
