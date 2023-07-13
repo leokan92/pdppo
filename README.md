@@ -1,4 +1,4 @@
-# Reinforcement Learning for Stochastic Discrete Lot-Sizing Problem and Frozen-Lake game
+# Post-Decision Proximal Policy Optimization with Dual Critic Networks for Accelerated Learning
 
 This repository contains code and resources the research developed at University of São Paulo (USP) and Politecnico di Torino (Polito) on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game. 
 
