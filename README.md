@@ -94,14 +94,12 @@ This project uses the following main dependencies:
 
 ```
 git clone https://github.com/username/repository.git
-
 ```
 
 ## Navigate into the project directory:
 
 ```
 cd repository
-
 ```
 
 Install the required Python packages. This project was developed with Python 3.8. Substitute requirements.txt with your actual requirements file:
@@ -144,5 +142,6 @@ To reproduce the results in the logs and results folders, you would need to run 
 
 Please note that due to the stochastic nature of the environments and training process, the results might not be identical, but they should be within a similar range.
 
+
 ## Contact
-For any additional questions, you can reach me at email@example.com
+For any additional questions, you can reach me at leonardo.felizardo@usp.br
