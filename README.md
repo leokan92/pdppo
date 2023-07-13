@@ -5,6 +5,8 @@ This repository contains code and resources the research developed at University
 ## Project Structure
 This repository consists of two main directories: `Lot-sizing` and `Lake application`, each containing the related files and folders. 
 
+
+
 ### Lot-Sizing
 
 `Lot-sizing` directory holds the following subdirectories:
@@ -52,18 +54,11 @@ The main components of the repository are as follows:
 │   ├───agents        # contains the implementations of various agents
 │   ├───envs          # contains the FrozenLake environment implementation
 │   ├───logs          # contains the logs of the agent's performance
-│   │   ├───frozen_lake_PDPPO
-│   │   ├───frozen_lake_PPO
-│   │   ├───results_1
-│   │   └───results_2
 │   └───results       # contains the results of the agent's performance
 │       └───frozen_lake_PPO
 └───Lot-sizing
-    ├───.vscode
     ├───agents        # contains the implementations of various agents
-    │   ├───utils     # utility functions for the agents
-    │   │   └───__pycache__
-    │   └───__pycache__
+    │   └───utils     # utility functions for the agents
     ├───cfg_env       # contains the settings for the Lot-sizing environment
     │   └───setting file
     ├───cfg_sol
@@ -142,6 +137,24 @@ To reproduce the results in the logs and results folders, you would need to run 
 
 Please note that due to the stochastic nature of the environments and training process, the results might not be identical, but they should be within a similar range.
 
+
+## Paper Reference
+
+To reference the paper associated with this work, please use the following citation:
+
+```scss
+To be included
+
+```
+
+## Paper Availability
+
+To access the full paper, please visit the following link: [arXiv](https://arxiv.org/abs/2208.00765)
+
+
+This link will direct you to the arXiv preprint version of the paper.
+
+Feel free to click on the link and explore the paper for a comprehensive understanding of the work.
 
 ## Contact
 For any additional questions, you can reach me at leonardo.felizardo@usp.br
