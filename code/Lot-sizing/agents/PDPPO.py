@@ -309,8 +309,6 @@ class PDPPO:
             # final loss of clipped objective PDPPO
             loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(torch.min(state_values,state_values_post.squeeze()), rewards) - 0.012 * dist_entropy
             
-            loss_numpy = loss.detach().cpu().numpy()
-            
             # take gradient step
             self.optimizer.zero_grad()
             loss.mean().backward()

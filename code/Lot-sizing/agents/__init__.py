@@ -1,36 +1,17 @@
-from .dummyAgent import DummyAgent
-from .qLearningAgent import QLearningAgent
-from .stochasticProgrammingAgent import StochasticProgrammingAgent
-from .valueIteration import ValueIteration
-from .approximateValueIterationMC import ValueIterationMC
-from .stableBaselineAgents import StableBaselineAgent
-from .regressionTreeApproximation import RegressionTreeApproximation
-from .PSOAgent import PSOagent
-from .adpAgentHD import AdpAgentHD
-from .adpAgentHD1 import AdpAgentHD1
-from .adpAgentHD3 import AdpAgentHD3
-from .multiAgentRL import MultiAgentRL
-from .perfectInfoAgent import PerfectInfoAgent
-from .ensembleAgent import EnsembleAgent
 from .PPOAgent import PPOAgent
-from .PDPPOAgent_one_critic import PDPPOAgent
-
+from .PDPPOAgent import PDPPOAgent
+from .PPOAgent_two_critics import PPOAgent_two_critics
+from .PDPPOAgent_one_critic import PDPPOAgent_one_critic
+from .stableBaselineAgents import StableBaselineAgent
+from .stableBaselineAgents import StableBaselineAgent
+from .perfectInfoAgent import PerfectInfoAgent
 
 __all__ = [
     "DummyAgent",
-    "QLearningAgent",
-    "StochasticProgrammingAgent",
-    "ValueIteration",
-    "ValueIterationMC",
-    "RegressionTreeApproximation",
+    "PerfectInfoAgent",	
     "StableBaselineAgent",
-    "PSOagent",
-    "AdpAgentHD",
-    "AdpAgentHD1",
-    "AdpAgentHD3",
-    "MultiAgentRL",
-    "PerfectInfoAgent",
-    "EnsembleAgent",
     "PPOAgent",
+    "PPOAgent_two_critics",
+    "PDPPOAgent",
     "PDPPOAgent_one_critic"
 ]

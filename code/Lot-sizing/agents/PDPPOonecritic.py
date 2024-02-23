@@ -144,7 +144,7 @@ class ActorCritic(nn.Module):
         return action_logprobs, state_values, dist_entropy
 
 
-class PDPPO:
+class PDPPOonecritic:
     def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, env, has_continuous_action_space, tau, action_std_init=0.6):
 
         self.has_continuous_action_space = has_continuous_action_space

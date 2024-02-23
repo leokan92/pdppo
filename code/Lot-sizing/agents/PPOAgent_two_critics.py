@@ -13,7 +13,7 @@ import matplotlib.patches as mpatches # Provides a way of adding a colored patch
 BASE_DIR = os.path.dirname(os.path.abspath('__file__'))
 AGENTS_DIR = os.path.join(BASE_DIR,'agents')
 sys.path.append(AGENTS_DIR)
-from agents.PPO import PPO
+from agents.PPOtwocritics import PPOtwocritics
 from envs import  SimplePlant
 
 
@@ -100,7 +100,7 @@ class SimplePlantSB(SimplePlant):
         return obs
 
 
-class PPOAgent():
+class PPOAgent_two_critics():
     def __init__(self, env: SimplePlant, settings: dict):
         self.env = SimplePlantSB(env.settings, env.stoch_model)
         self.last_inventory = env.inventory_level
@@ -139,11 +139,11 @@ class PPOAgent():
     
         ## Note : print/log frequencies should be > than self.max_ep_len
     
-        ################ PPO hyperparameters ################
+        ################ PPO_two_critics hyperparameters ################
         self.update_timestep = self.max_ep_len * 4      # update policy every n timesteps
-        self.K_epochs = 60               # update policy for K epochs in one PPO update
+        self.K_epochs = 60               # update policy for K epochs in one PPO_two_critics update
     
-        self.eps_clip = 0.2          # clip parameter for PPO
+        self.eps_clip = 0.2          # clip parameter for PPO_two_critics
         self.gamma = 0.99            # discount factor
     
         self.lr_actor = 0.00055       # learning rate for actor network
@@ -153,8 +153,10 @@ class PPOAgent():
         #####################################################
         self.run_num_pretrained = 0      #### change this to prevent overwriting weights in same self.experiment_name folder
         
-        print("training environment name : " + self.experiment_name + '_PPO')
+        print("training environment name : " + self.experiment_name + '_PPO_two_critics')
         
+        
+    
         # state space dimension
         self.state_dim = self.env.observation_space.shape[0]
     
@@ -164,7 +166,7 @@ class PPOAgent():
         else:
             self.action_dim = self.env.action_space
 
-        self.ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.has_continuous_action_space, self.action_std)
+        self.ppo_agent = PPOtwocritics(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.has_continuous_action_space, self.action_std)
         
        
     ################################### Training ###################################
@@ -182,7 +184,7 @@ class PPOAgent():
         if not os.path.exists(log_dir):
               os.makedirs(log_dir)
     
-        log_dir = log_dir + '/' + self.experiment_name + '_PPO/'
+        log_dir = log_dir + '/' + self.experiment_name + '_PPO_two_critics/'
         if not os.path.exists(log_dir):
               os.makedirs(log_dir)
     
@@ -192,7 +194,7 @@ class PPOAgent():
         run_num = len(current_num_files)
     
         #### create new log file for each run
-        log_f_name = log_dir + '/PPO_' + self.experiment_name + "_log_" + str(run_num) + ".csv"
+        log_f_name = log_dir + '/PPO_two_critics_' + self.experiment_name + "_log_" + str(run_num) + ".csv"
     
         print("current logging run number for " + self.experiment_name + " : ", run_num)
         print("logging at : " + log_f_name)
@@ -205,12 +207,12 @@ class PPOAgent():
         if not os.path.exists(directory):
               os.makedirs(directory)
     
-        directory = directory + '/' + self.experiment_name + '_PPO' + '/'
+        directory = directory + '/' + self.experiment_name + '_PPO_two_critics' + '/'
         if not os.path.exists(directory):
               os.makedirs(directory)
     
         
-        checkpoint_path = directory + "PPO_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
+        checkpoint_path = directory + "PPO_two_critics_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
         print("save checkpoint path : " + checkpoint_path)
         #####################################################
     
@@ -236,9 +238,9 @@ class PPOAgent():
         else:
             print("Initializing a discrete action space policy")
         print("--------------------------------------------------------------------------------------------")
-        print("PPO update frequency : " + str(self.update_timestep) + " timesteps")
-        print("PPO K epochs : ", self.K_epochs)
-        print("PPO epsilon clip : ", self.eps_clip)
+        print("PPO_two_critics update frequency : " + str(self.update_timestep) + " timesteps")
+        print("PPO_two_critics K epochs : ", self.K_epochs)
+        print("PPO_two_critics epsilon clip : ", self.eps_clip)
         print("discount factor (self.gamma) : ", self.gamma)
         print("--------------------------------------------------------------------------------------------")
         print("optimizer learning rate actor : ", self.lr_actor)
@@ -254,7 +256,7 @@ class PPOAgent():
         ################# training procedure ################
     
         # initialize a PPO agent
-        self.ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.has_continuous_action_space, self.action_std)
+        self.ppo_agent = PPOtwocritics(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.has_continuous_action_space, self.action_std)
     
         # track total training time
         start_time = datetime.now().replace(microsecond=0)
@@ -295,7 +297,7 @@ class PPOAgent():
                 time_step +=1
                 current_ep_reward += reward
     
-                # update PPO agent
+                # update PPO_two_critics agent
                 if time_step % self.update_timestep == 0:
                     self.ppo_agent.update()
     
@@ -375,9 +377,9 @@ class PPOAgent():
         return self.ppo_agent.select_action(state)
     
     def load_agent(self,path):
-        #directory = "PPO_preTrained" + '/' + env_name + '/'
+        #directory = "PPO_two_critics_preTrained" + '/' + env_name + '/'
         directory = self.LOG_DIR
-        directory = directory + '/' + self.experiment_name + '_PPO' + '/'
-        checkpoint_path = directory + "PPO_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
+        directory = directory + '/' + self.experiment_name + '_PPO_two_critics' + '/'
+        checkpoint_path = directory + "PPO_two_critics_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
         print("loading network from : " + checkpoint_path)
         self.ppo_agent.load(checkpoint_path)
