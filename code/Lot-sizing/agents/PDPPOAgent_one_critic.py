@@ -13,8 +13,8 @@ import matplotlib.patches as mpatches # Provides a way of adding a colored patch
 BASE_DIR = os.path.dirname(os.path.abspath('__file__'))
 AGENTS_DIR = os.path.join(BASE_DIR,'agents')
 sys.path.append(AGENTS_DIR)
-from agents.PDPPO import PDPPO
-from envs import *
+from agents.PDPPOonecritic import PDPPOonecritic
+from envs import SimplePlant
 import copy
 
 
@@ -101,7 +101,7 @@ class SimplePlantSB(SimplePlant):
         return obs
 
 
-class PDPPOAgent():
+class PDPPOAgent_one_critic():
     def __init__(self, env: SimplePlant, settings: dict):
         self.env = SimplePlantSB(env.settings, env.stoch_model)
         self.last_inventory = env.inventory_level
@@ -142,7 +142,7 @@ class PDPPOAgent():
     
         ## Note : print/log frequencies should be > than self.max_ep_len
     
-        ################ PDPPO hyperparameters ################
+        ################ PDPPO_one_critic hyperparameters ################
         self.update_timestep = self.max_ep_len * 4      # update policy every n timesteps
         self.K_epochs = 60               # update policy for K epochs in one PDPPO update
     
@@ -169,7 +169,7 @@ class PDPPOAgent():
         else:
             self.action_dim = self.env.action_space
 
-        self.pdppo_agent = PDPPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, copy.copy(self.env), self.has_continuous_action_space,self.tau, self.action_std)
+        self.pdppo_agent = PDPPO_one_critic(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, copy.copy(self.env), self.has_continuous_action_space,self.tau, self.action_std)
         
        
     ################################### Training ###################################
@@ -187,7 +187,7 @@ class PDPPOAgent():
         if not os.path.exists(log_dir):
               os.makedirs(log_dir)
     
-        log_dir = log_dir + '/' + self.experiment_name + '_PDPPO/'
+        log_dir = log_dir + '/' + self.experiment_name + '_PDPPO_one_critic/'
         if not os.path.exists(log_dir):
               os.makedirs(log_dir)
     
@@ -197,7 +197,7 @@ class PDPPOAgent():
         run_num = len(current_num_files)
     
         #### create new log file for each run
-        log_f_name = log_dir + '/PDPPO_' + self.experiment_name + "_log_" + str(run_num) + ".csv"
+        log_f_name = log_dir + '/PDPPO_one_critic_' + self.experiment_name + "_log_" + str(run_num) + ".csv"
     
         print("current logging run number for " + self.experiment_name + " : ", run_num)
         print("logging at : " + log_f_name)
@@ -215,7 +215,7 @@ class PDPPOAgent():
               os.makedirs(directory)
     
         
-        checkpoint_path = directory + "PDPPO_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
+        checkpoint_path = directory + "PDPPO_one_critic_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
         print("save checkpoint path : " + checkpoint_path)
         #####################################################
     
@@ -241,9 +241,9 @@ class PDPPOAgent():
         else:
             print("Initializing a discrete action space policy")
         print("--------------------------------------------------------------------------------------------")
-        print("PDPPO update frequency : " + str(self.update_timestep) + " timesteps")
-        print("PDPPO K epochs : ", self.K_epochs)
-        print("PDPPO epsilon clip : ", self.eps_clip)
+        print("PDPPO_one_critic update frequency : " + str(self.update_timestep) + " timesteps")
+        print("PDPPO_one_critic K epochs : ", self.K_epochs)
+        print("PDPPO_one_critic epsilon clip : ", self.eps_clip)
         print("discount factor (self.gamma) : ", self.gamma)
         print("--------------------------------------------------------------------------------------------")
         print("optimizer learning rate actor : ", self.lr_actor)
@@ -259,7 +259,7 @@ class PDPPOAgent():
         ################# training procedure ################
     
         # initialize a PDPPO agent
-        self.PDPPO_agent = PDPPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, copy.copy(self.env), self.has_continuous_action_space, self.action_std)
+        self.PDPPO_agent = PDPPO_one_critic(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, copy.copy(self.env), self.has_continuous_action_space, self.action_std)
     
         # track total training time
         start_time = datetime.now().replace(microsecond=0)
@@ -388,7 +388,7 @@ class PDPPOAgent():
     def load_agent(self,path):
         #directory = "PDPPO_preTrained" + '/' + env_name + '/'
         directory = self.LOG_DIR
-        directory = directory + '/' + self.experiment_name + '_PDPPO' + '/'
-        checkpoint_path = directory + "PDPPO_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
+        directory = directory + '/' + self.experiment_name + '_PDPPO_one_critic' + '/'
+        checkpoint_path = directory + "PDPPO_one_critic_{}_{}_{}.pth".format(self.experiment_name, self.random_seed, self.run_num_pretrained)
         print("loading network from : " + checkpoint_path)
         self.pdppo_agent.load(checkpoint_path)

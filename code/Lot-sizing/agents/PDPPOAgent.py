@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath('__file__'))
 AGENTS_DIR = os.path.join(BASE_DIR,'agents')
 sys.path.append(AGENTS_DIR)
 from agents.PDPPO import PDPPO
-from envs import *
+from envs import SimplePlant
 import copy
 
 

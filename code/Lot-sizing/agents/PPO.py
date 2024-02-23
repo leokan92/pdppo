@@ -214,7 +214,7 @@ class PPO:
             self.buffer.logprobs.append(action_logprob)
             self.buffer.state_values.append(state_val)
 
-            return action.numpy()
+            return action.cpu().numpy()
     
     def update(self):
         # Monte Carlo estimate of returns
@@ -257,8 +257,6 @@ class PPO:
 
             # final loss of clipped objective PPO
             loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.012 * dist_entropy
-            
-            loss_numpy = loss.detach().numpy()
             
             # take gradient step
             self.optimizer.zero_grad()
