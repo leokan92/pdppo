@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "cwd": "C:\\Users\\leona\\Meu Drive\\USP\\Doutorado\\PoliTO\\pdppo\\code\\Lake application\\"
+            "cwd": "C:\\Users\\leona\\Meu Drive\\USP\\Doutorado\\PoliTO\\pdppo\\code\\Lot-sizing\\"
 
         }
     ]
