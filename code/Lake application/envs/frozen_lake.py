@@ -252,8 +252,6 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                                 li.append((1.0 - base_slip_prob, newstate, reward, False))
                         else:
                             li.append((1.0, *update_probability_matrix(row, col, a)))
-
-
         super(FrozenLakeEnv, self).__init__(nS, nA, P, isd)
 
     def get_post_decision_state(self, s, a):
@@ -279,7 +277,8 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
             row, col = to_row_col(s)
             next_row, next_col = inc(row, col, a)
             next_s = to_s(next_row, next_col)
-            return next_s
+            post_reward = self.proximity_reward(next_row, next_col)
+            return next_s, post_reward
     
     def render(self, mode="human"):
         outfile = StringIO() if mode == "ansi" else sys.stdout

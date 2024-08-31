@@ -1,74 +1,137 @@
+
 # -*- coding: utf-8 -*-
+
 """
+
 Created on Wed Mar  1 00:43:49 2023
 
+
+
 @author: leona
+
 """
 
+
+
 import numpy as np
+
 import torch
+
 import torch.nn as nn
+
 import torch.nn.init as init
+
 from torch.distributions import MultivariateNormal
+
 from torch.distributions import Categorical
 
+
+
 ################################## set device ##################################
-print("============================================================================================")
+
+#print("============================================================================================")
+
 # set device to cpu or cuda
+
 device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
-print("============================================================================================")
+
+# if(torch.cuda.is_available()): 
+
+#     device = torch.device('cuda:0') 
+
+#     torch.cuda.empty_cache()
+
+#     print("Device set to : " + str(torch.cuda.get_device_name(device)))
+
+# else:
+
+#     print("Device set to : cpu")
+
+#print("============================================================================================")
+
+
+
+
+
+class NegReLU(nn.Module):
+
+    def forward(self, x):
+
+        return -torch.relu(x)
+
 
 
 ################################## PDPPO Policy ##################################
-class RolloutBuffer:
-    def __init__(self):
-        self.actions = []
-        self.states = []
-        self.post_states = []
-        self.logprobs = []
-        self.rewards = []
-        self.state_values = []
-        self.state_values_post = []
-        self.is_terminals = []
-    
-    def clear(self):
-        del self.actions[:]
-        del self.states[:]
-        del self.post_states[:]
-        del self.logprobs[:]
-        del self.rewards[:]
-        del self.state_values[:]
-        del self.state_values_post[:]
-        del self.is_terminals[:]
 
+class RolloutBuffer:
+
+    def __init__(self):
+
+        self.actions = []
+
+        self.states = []
+
+        self.post_states = []
+
+        self.logprobs = []
+
+        self.rewards = []
+
+        self.post_rewards = []
+
+        self.state_values = []
+
+        self.state_values_post = []
+
+        self.is_terminals = []
+
+    
+
+    def clear(self,lag):
+
+        self.actions = self.actions[lag:]
+        self.states = self.states[lag:]
+        self.post_states = self.post_states[lag:]
+        self.logprobs = self.logprobs[lag:]
+        self.rewards = self.rewards[lag:]
+        self.post_rewards = self.post_rewards[lag:]
+        self.state_values = self.state_values[lag:]
+        self.state_values_post = self.state_values_post[lag:]
+        self.is_terminals = self.is_terminals[lag:]
 
 class ActorCritic(nn.Module):
+
     def __init__(self, state_dim, action_dim, has_continuous_action_space, action_std_init):
+
         super(ActorCritic, self).__init__()
 
+
+
         self.has_continuous_action_space = has_continuous_action_space
+
         
+
         if has_continuous_action_space:
+
             self.action_dim = action_dim
+
             self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
+
         # actor
+
         if has_continuous_action_space :
+
             self.actor = nn.Sequential(
-                            nn.Linear(state_dim, 64),
+                            nn.Linear(state_dim, 128),
                             nn.Tanh(),
-                            nn.Linear(64, 64),
+                            nn.Linear(128, 128),
                             nn.Tanh(),
-                            nn.Linear(64, action_dim),
+                            nn.Linear(128, action_dim),
                             nn.Tanh()
                         )
+
         else:
-            
+
             self.actor = nn.Sequential(
                             nn.Linear(state_dim, 128),
                             nn.Tanh(),
@@ -76,30 +139,52 @@ class ActorCritic(nn.Module):
                             nn.Tanh(),
                             nn.Linear(128, action_dim)
                         )
-            
-            
+
+
         # critic
+
         self.critic = nn.Sequential(
                         nn.Linear(state_dim, 128),
                         nn.Tanh(),
                         nn.Linear(128, 128),
                         nn.Tanh(),
-                        nn.Linear(128, 1)
+                        nn.Linear(128, 1),
+
                     )
+
         
+
         self.critic_post = nn.Sequential(
                         nn.Linear(state_dim, 128),
                         nn.Tanh(),
                         nn.Linear(128, 128),
                         nn.Tanh(),
-                        nn.Linear(128, 1)
+                        nn.Linear(128, 1),
                     )
+
     
+
+    def _initialize_actor(self, m):
+        if isinstance(m, nn.Linear):
+            # Example: Kaiming initialization for actor layers
+            init.kaiming_uniform_(m.weight, nonlinearity='tanh')
+            if m.bias is not None:
+                init.zeros_(m.bias)
+
+
+
+    def _initialize_critic(self, m):
+        if isinstance(m, nn.Linear):
+            # Example: Xavier initialization for critic layers
+            init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                init.zeros_(m.bias)
+
     def forward(self, state):
+
         raise NotImplementedError
-    
-    
-    
+
+
     def set_action_std(self, new_action_std):
         if self.has_continuous_action_space:
             self.action_var = torch.full((self.action_dim,), new_action_std * new_action_std).to(device)
@@ -108,9 +193,7 @@ class ActorCritic(nn.Module):
             print("WARNING : Calling ActorCritic::set_action_std() on discrete action space policy")
             print("--------------------------------------------------------------------------------------------")
 
-
-    
-    def act(self, state,tau):
+    def act(self, state):
 
         if self.has_continuous_action_space:
             action_mean = self.actor(state)
@@ -127,7 +210,7 @@ class ActorCritic(nn.Module):
         
         return action.detach(), action_logprob.detach()
     
-    def evaluate(self, state,post_state, action,tau):
+    def evaluate(self, state, post_state, action):
 
         #x = nn.functional.relu(self.fc2(nn.functional.relu(self.fc1(state))))
         logits = self.actor(state)
@@ -159,11 +242,13 @@ class PDPPO:
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
-        self.optimizer = torch.optim.Adam([
-                        {'params': self.policy.actor.parameters(), 'lr': lr_actor},
-                        {'params': self.policy.critic.parameters(), 'lr': lr_critic},
-                        {'params': self.policy.critic_post.parameters(), 'lr': lr_critic}
-                    ], weight_decay=0.0002) #, weight_decay=0.001
+        self.policy.actor.apply(self.policy._initialize_actor)
+        self.policy.critic.apply(self.policy._initialize_critic)
+        self.policy.critic_post.apply(self.policy._initialize_critic)
+
+        self.optimizer_actor = torch.optim.Adam(self.policy.actor.parameters(), lr=lr_actor)
+        self.optimizer_critic = torch.optim.Adam(self.policy.critic.parameters(), lr=lr_critic)
+        self.optimizer_critic_post = torch.optim.Adam(self.policy.critic_post.parameters(), lr=lr_critic)
 
         self.policy_old = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
@@ -197,20 +282,18 @@ class PDPPO:
         print("--------------------------------------------------------------------------------------------")
     
     def select_action(self, state, tau):
-
         state_int = state.copy()
 
         with torch.no_grad():
             state = torch.tensor(state).to(device)
             state = state.float() 
             state = torch.unsqueeze(state, 1).T
-            action, action_logprob = self.policy_old.act(state,tau)
+            action, action_logprob = self.policy_old.act(state)
         
-        post_state = self.env.get_post_decision_state(np.argmax(state_int),action.clone())
+        post_state, post_reward = self.env.get_post_decision_state(np.argmax(state_int.copy()),action.clone().cpu().numpy())
 
         binary_array = np.zeros(state.shape[1], dtype=int)
         binary_array[post_state] = 1
-        
 
         post_state = torch.tensor(binary_array).to(device)
         post_state = post_state.float() 
@@ -221,6 +304,7 @@ class PDPPO:
         self.buffer.post_states.append(post_state)
         self.buffer.actions.append(action)
         self.buffer.logprobs.append(action_logprob)
+        self.buffer.post_rewards.append(post_reward)
         
         with torch.no_grad():
             state_val = self.policy_old.critic(state)
@@ -229,10 +313,10 @@ class PDPPO:
         self.buffer.state_values.append(state_val)
         self.buffer.state_values_post.append(state_val_post)
 
-        return action.cpu().numpy()
+        return action.cpu().numpy(), post_reward
     
     def update(self):
-        # Monte Carlo estimate of returns
+
         rewards = []
         discounted_reward = 0
         for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
@@ -243,30 +327,46 @@ class PDPPO:
             
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+
+        #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+
+        post_rewards = []
+        discounted_reward = 0
+        for reward, is_terminal in zip(reversed(self.buffer.post_rewards), reversed(self.buffer.is_terminals)):
+            if is_terminal:
+                discounted_reward = 0
+            discounted_reward = reward + (self.gamma * discounted_reward)
+            post_rewards.insert(0, discounted_reward)
+            
+
+        post_rewards = torch.tensor(post_rewards, dtype=torch.float32).to(device)
+
+        # Normalizing the rewards
+
+        # post_rewards = (post_rewards - post_rewards.mean()) / (post_rewards.std() + 1e-7)
+
+        # pre_rewards = (rewards - post_rewards)
 
         # convert list to tensor
-        
-        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=1)).detach().to(device)
-        old_post_states = torch.squeeze(torch.stack(self.buffer.post_states, dim=0).detach().to(device),1)
-        old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
-        old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach().to(device)
+        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
+        old_post_states = torch.squeeze(torch.stack(self.buffer.post_states, dim=0)).detach().to(device)
+        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
+        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
         old_state_values = torch.squeeze(torch.stack(self.buffer.state_values, dim=0)).detach().to(device)
         old_state_values_post = torch.squeeze(torch.stack(self.buffer.state_values_post, dim=0)).detach().to(device)
 
-        # calculate advantages
-        advantages = rewards.detach() - torch.min(old_state_values.detach(), old_state_values_post.detach()).detach()
+        # Calculate advantages for current and subsequent states
+        advantages_current = rewards - old_state_values
+        advantages_post = post_rewards - old_state_values_post
+
+        advantages = torch.max(advantages_current, advantages_post)
+        
 
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
 
             # Evaluating old actions and values
-            logprobs, state_values, state_values_post, dist_entropy = self.policy.evaluate(old_states,old_post_states, old_actions,self.tau)
-
-            # match state_values tensor dimensions with rewards tensor
-            state_values = torch.squeeze(state_values)
-            
-            state_values_post = torch.squeeze(state_values_post)
+            logprobs, state_values, post_state_values, dist_entropy,  = self.policy.evaluate(old_states, old_post_states, old_actions)
 
             # Finding the ratio (pi_theta / pi_theta__old)
             ratios = torch.exp(logprobs - old_logprobs.detach())
@@ -275,24 +375,28 @@ class PDPPO:
             surr1 = ratios * advantages.unsqueeze(1)
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages.unsqueeze(1)
 
-            # final loss of clipped objective PDPPO
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(torch.min(state_values,state_values_post), rewards) - 0.012 * dist_entropy
-            
-            loss_numpy = loss.detach().cpu().numpy()
-            
-            # take gradient step
-            self.optimizer.zero_grad()
-            loss.mean().backward()
-            torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1)
-            self.optimizer.step()
-            
-        # Copy new weights into old policy
+            critic_loss = self.MseLoss(state_values.squeeze(), rewards)
+
+            critic_loss_post = self.MseLoss(post_state_values.squeeze(), post_rewards)
+
+            actor_loss = (-torch.min(surr1, surr2) - 0.001 * dist_entropy).mean() + 0.7*(critic_loss.detach() + critic_loss_post.detach())
+
+            # Update the actor
+            self.optimizer_actor.zero_grad()
+            actor_loss.backward()
+            self.optimizer_actor.step()
+
+            # Update the critic
+            self.optimizer_critic.zero_grad()
+            critic_loss.backward()
+            self.optimizer_critic.step()
+
+            # Update the critic_post
+            self.optimizer_critic_post.zero_grad()
+            critic_loss_post.backward()
+            self.optimizer_critic_post.step()
         
         self.policy_old.load_state_dict(self.policy.state_dict())
-
-        # clear buffer
-        self.buffer.clear()
-    
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)
    

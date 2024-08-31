@@ -7,21 +7,26 @@ Created on Wed Mar  1 00:43:49 2023
 
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 from torch.distributions import MultivariateNormal
 from torch.distributions import Categorical
 
 ################################## set device ##################################
-print("============================================================================================")
+#print("============================================================================================")
 # set device to cpu or cuda
 device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
-print("============================================================================================")
+# if(torch.cuda.is_available()): 
+#     device = torch.device('cuda:0') 
+#     torch.cuda.empty_cache()
+#     print("Device set to : " + str(torch.cuda.get_device_name(device)))
+# else:
+#     print("Device set to : cpu")
+#print("============================================================================================")
 
+
+class NegReLU(nn.Module):
+    def forward(self, x):
+        return -torch.relu(x)
 
 ################################## PPO_two_critics Policy ##################################
 class RolloutBuffer:
@@ -31,6 +36,7 @@ class RolloutBuffer:
         self.logprobs = []
         self.rewards = []
         self.state_values = []
+        self.state_values_2 = []
         self.is_terminals = []
     
     def clear(self):
@@ -39,6 +45,7 @@ class RolloutBuffer:
         del self.logprobs[:]
         del self.rewards[:]
         del self.state_values[:]
+        del self.state_values_2[:] 
         del self.is_terminals[:]
 
 
@@ -74,7 +81,8 @@ class ActorCritic(nn.Module):
                         nn.Tanh(),
                         nn.Linear(128, 128),
                         nn.Tanh(),
-                        nn.Linear(128, 1)
+                        nn.Linear(128, 1),
+                        nn.Tanh()
                     )
         
         self.critic_2 = nn.Sequential(
@@ -82,8 +90,23 @@ class ActorCritic(nn.Module):
                         nn.Tanh(),
                         nn.Linear(128, 128),
                         nn.Tanh(),
-                        nn.Linear(128, 1)
+                        nn.Linear(128, 1),
+                        nn.Tanh()
                     )
+        
+    def _initialize_actor(self, m):
+        if isinstance(m, nn.Linear):
+            # Example: Kaiming initialization for actor layers
+            init.kaiming_uniform_(m.weight, nonlinearity='tanh')
+            if m.bias is not None:
+                init.zeros_(m.bias)
+
+    def _initialize_critic(self, m):
+        if isinstance(m, nn.Linear):
+            # Example: Xavier initialization for critic layers
+            init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                init.zeros_(m.bias)
     
     def forward(self, state):
         raise NotImplementedError
@@ -118,8 +141,9 @@ class ActorCritic(nn.Module):
         action = dist.sample()
         action_logprob = dist.log_prob(action)
         state_val = self.critic(state)
+        state_val_2 = self.critic_2(state)
 
-        return action.cpu().detach(), action_logprob.detach(), state_val.detach()
+        return action.cpu().detach(), action_logprob.detach(), state_val.detach(), state_val_2.detach()
     
     def evaluate(self, state, action):
 
@@ -137,8 +161,9 @@ class ActorCritic(nn.Module):
             #x = nn.functional.relu(self.fc(state))
             x = nn.functional.relu(self.fc2(nn.functional.relu(self.fc1(state))))
             logits = self.actor(x)
-            action_probs = nn.functional.softmax(logits, dim=-1)
-            dist = Categorical(action_probs.view(state.shape[0],len(self.action_dim.nvec),-1))
+            logits_shaped = logits.view(-1,len(self.action_dim.nvec), self.action_dim.nvec.max())
+            action_probs = nn.functional.softmax(logits_shaped, dim=-1)
+            dist = Categorical(action_probs)
             # action_probs = self.actor(state)
             # dist = Categorical(action_probs)
         action_logprobs = dist.log_prob(action)
@@ -150,7 +175,7 @@ class ActorCritic(nn.Module):
 
 
 class PPOtwocritics:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space, action_std_init=0.6):
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space, tau , action_std_init=0.6):
 
         self.has_continuous_action_space = has_continuous_action_space
 
@@ -160,10 +185,14 @@ class PPOtwocritics:
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
+        self.tau = tau
         
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
+        self.policy.actor.apply(self.policy._initialize_actor)
+        self.policy.critic.apply(self.policy._initialize_critic)
+        self.policy.critic_2.apply(self.policy._initialize_critic)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
@@ -249,13 +278,13 @@ class PPOtwocritics:
         old_state_values_2 = torch.squeeze(torch.stack(self.buffer.state_values_2, dim=0)).detach().to(device)
 
         # calculate advantages
-        advantages = rewards.detach() - torch.min(old_state_values.detach(), old_state_values_2.detach()).detach()
+        advantages = rewards.detach() - torch.minimum(old_state_values.detach(), old_state_values_2.detach()).detach()
 
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
 
             # Evaluating old actions and values
-            logprobs, state_values, state_values_2, dist_entropy = self.policy.evaluate(old_states, old_actions, self.tau)
+            logprobs, state_values, state_values_2, dist_entropy = self.policy.evaluate(old_states, old_actions)
 
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
@@ -268,9 +297,7 @@ class PPOtwocritics:
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages.unsqueeze(1)
 
             # final loss of clipped objective PPO_two_critics
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(torch.min(state_values,state_values_2.squeeze()), rewards) - 0.012 * dist_entropy
-            
-            loss_numpy = loss.detach().numpy()
+            loss = -torch.minimum(surr1, surr2) + 0.5 * self.MseLoss(torch.min(state_values,state_values_2.squeeze()), rewards) - 0.012 * dist_entropy
             
             # take gradient step
             self.optimizer.zero_grad()

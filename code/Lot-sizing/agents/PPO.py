@@ -7,21 +7,26 @@ Created on Wed Mar  1 00:43:49 2023
 
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 from torch.distributions import MultivariateNormal
 from torch.distributions import Categorical
 
 ################################## set device ##################################
-print("============================================================================================")
+#print("============================================================================================")
 # set device to cpu or cuda
 device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
-print("============================================================================================")
+# if(torch.cuda.is_available()): 
+#     device = torch.device('cuda:0') 
+#     torch.cuda.empty_cache()
+#     print("Device set to : " + str(torch.cuda.get_device_name(device)))
+# else:
+#     print("Device set to : cpu")
+#print("============================================================================================")
 
+
+class NegReLU(nn.Module):
+    def forward(self, x):
+        return -torch.relu(x)
 
 ################################## PPO Policy ##################################
 class RolloutBuffer:
@@ -33,13 +38,13 @@ class RolloutBuffer:
         self.state_values = []
         self.is_terminals = []
     
-    def clear(self):
-        del self.actions[:]
-        del self.states[:]
-        del self.logprobs[:]
-        del self.rewards[:]
-        del self.state_values[:]
-        del self.is_terminals[:]
+    def clear(self,lag):
+        self.actions = self.actions[lag:]
+        self.states = self.states[lag:]
+        self.logprobs = self.logprobs[lag:]
+        self.rewards = self.rewards[lag:]
+        self.state_values = self.state_values[lag:]
+        self.is_terminals = self.is_terminals[lag:]
 
 
 class ActorCritic(nn.Module):
@@ -77,6 +82,20 @@ class ActorCritic(nn.Module):
                         nn.Linear(128, 1)
                     )
     
+    def _initialize_actor(self, m):
+        if isinstance(m, nn.Linear):
+            # Example: Kaiming initialization for actor layers
+            init.kaiming_uniform_(m.weight, nonlinearity='tanh')
+            if m.bias is not None:
+                init.zeros_(m.bias)
+
+    def _initialize_critic(self, m):
+        if isinstance(m, nn.Linear):
+            # Example: Xavier initialization for critic layers
+            init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                init.zeros_(m.bias)
+    
     def forward(self, state):
         raise NotImplementedError
     
@@ -102,10 +121,9 @@ class ActorCritic(nn.Module):
             #x = nn.functional.relu(self.fc(state))
             x = nn.functional.relu(self.fc2(nn.functional.relu(self.fc1(state))))
             logits = self.actor(x)
-            action_probs = nn.functional.softmax(logits, dim=-1)
-            dist = Categorical(action_probs.view(len(self.action_dim.nvec),-1))
-            # action_probs = self.actor(state)
-            # dist = Categorical(action_probs)
+            logits_shaped = logits.view(len(self.action_dim.nvec), self.action_dim.nvec.max())
+            action_probs = nn.functional.softmax(logits_shaped, dim=-1)
+            dist = Categorical(action_probs)
 
         action = dist.sample()
         action_logprob = dist.log_prob(action)
@@ -129,8 +147,9 @@ class ActorCritic(nn.Module):
             #x = nn.functional.relu(self.fc(state))
             x = nn.functional.relu(self.fc2(nn.functional.relu(self.fc1(state))))
             logits = self.actor(x)
-            action_probs = nn.functional.softmax(logits, dim=-1)
-            dist = Categorical(action_probs.view(state.shape[0],len(self.action_dim.nvec),-1))
+            logits_shaped = logits.view(-1,len(self.action_dim.nvec), self.action_dim.nvec.max())
+            action_probs = nn.functional.softmax(logits_shaped, dim=-1)
+            dist = Categorical(action_probs)
             # action_probs = self.actor(state)
             # dist = Categorical(action_probs)
         action_logprobs = dist.log_prob(action)
@@ -155,6 +174,8 @@ class PPO:
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(state_dim, action_dim, has_continuous_action_space, action_std_init).to(device)
+        self.policy.actor.apply(self.policy._initialize_actor)
+        self.policy.critic.apply(self.policy._initialize_critic)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
@@ -228,7 +249,7 @@ class PPO:
             
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+        # rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         # convert list to tensor
         old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
@@ -256,7 +277,7 @@ class PPO:
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages.unsqueeze(1)
 
             # final loss of clipped objective PPO
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.012 * dist_entropy
+            loss = -torch.min(surr1, surr2) + 0.7 * self.MseLoss(state_values, rewards) - 0.0010 * dist_entropy
             
             # take gradient step
             self.optimizer.zero_grad()
@@ -267,7 +288,7 @@ class PPO:
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         # clear buffer
-        self.buffer.clear()
+        #self.buffer.clear()
     
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)

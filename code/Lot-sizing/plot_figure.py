@@ -13,12 +13,13 @@ import seaborn as sns
 
 
 
-def save_graph():
+def save_graph(): 
     print("============================================================================================")
     
-    #experiment_name = '15items_5machines_i100'
-    #experiment_name = '20items_10machines'
-    experiment_name = '25items_10machines'
+    # experiment_name = '15items_5machines_t100_i100'
+    # experiment_name = '20items_10machines_t100_i100'
+    # experiment_name = '25items_10machines_t100_i100'
+    experiment_name = '25items_15machines_t100_i100'
     env_name = experiment_name
     
     rolling_window = 10
@@ -38,17 +39,29 @@ def save_graph():
 
     # get number of log files in directory
     BASE_DIR = os.path.dirname(os.path.abspath('__file__'))   
+    
     # Use the logs file in the root path of the main.
     LOG_DIR = os.path.join(BASE_DIR,'logs')
     
     log_dir = LOG_DIR + '/' + env_name + '_PPO' + '/'
 
-    current_num_files = next(os.walk(log_dir))[2]
+    # Check if the directory exists
+    if not os.path.exists(log_dir):
+        print(f"Directory not found: {log_dir}")
+    else:
+        # Attempt to walk through the directory
+        try:
+            current_num_files = next(os.walk(log_dir))[2]
+            print(f"Number of files in the directory: {len(current_num_files)}")
+        except StopIteration:
+            print("No files in the directory.")
+
     num_runs = len(current_num_files)-1
 
     all_runs_ppo = []
     
-    
+    print(num_runs)
+
     ########################################################################################
     for run_num in range(num_runs):
         run_num = run_num + 1
@@ -123,7 +136,7 @@ def save_graph():
     reward_std = df_concat.groupby('timestep')['reward_mean'].std().iloc[rolling_window:]
     
     # Plot mean reward with shaded confidence interval
-    sns.lineplot(x=reward_mean.index, y=reward_mean, ax=ax,label='PDPPO 1 critic')
+    sns.lineplot(x=reward_mean.index, y=reward_mean, ax=ax,label='PDPPO')
     ax.fill_between(reward_mean.index, reward_mean - reward_std, reward_mean + reward_std, alpha=0.2)
     #ax.set(xlabel='Timestep', ylabel='Mean Reward', title='Average Reward with Confidence Interval')
     ax.legend()
@@ -148,5 +161,4 @@ def save_graph():
 
 if __name__ == '__main__':
 
-    save_graph()
-    
+    save_graph()    

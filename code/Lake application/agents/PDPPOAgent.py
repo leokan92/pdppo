@@ -18,93 +18,9 @@ from envs import *
 import copy
 
 
-class SimplePlantSB(SimplePlant):
-    def __init__(self, settings, stoch_model):
-        super().__init__(settings, stoch_model)
-        try:self.dict_obs = settings['dict_obs']
-        except:self.dict_obs = False
-        self.last_inventory = copy.copy(self.inventory_level)
-        self.action_space = gym.spaces.MultiDiscrete(
-            [self.n_items+1] * self.n_machines
-        )
-        
-        if self.dict_obs:
-            self.observation_space = gym.spaces.Dict({
-                'inventory_level': gym.spaces.Box(low = np.zeros(self.n_items),high = np.ones(self.n_items)*(settings['max_inventory_level'][0]+1)*self.n_items),
-                'machine_setup': gym.spaces.MultiDiscrete([self.n_items+1] * self.n_machines)
-                #'last_inventory_level':gym.spaces.Box(low = np.zeros(self.n_items),high = np.ones(self.n_items)*(settings['max_inventory_level'][0]+1)*self.n_items)
-            })
-        else:
-            self.observation_space = gym.spaces.Box(
-                low=np.zeros(self.n_items+self.n_machines),# high for the inventory level
-                high=np.concatenate(
-                    [
-                        np.array(self.max_inventory_level),
-                        np.ones(self.n_machines) * (self.n_items+1), #high for the machine setups 
-                        #np.array(self.max_inventory_level) # high for the inventory level
-                    ]),
-                dtype=np.int32
-            )
-
-    def step(self, action):
-        """
-        Step method: Execute one time step within the environment
-
-        Parameters
-        ----------
-        action : action given by the agent
-
-        Returns
-        -------
-        obs : Observation of the state give the method _next_observation
-        reward : Cost given by the _reward method
-        done : returns True or False given by the _done method
-        dict : possible information for control to environment monitoring
-
-        """
-        self.last_inventory = copy.copy(self.inventory_level)
-            
-        self.total_cost = self._take_action(action, self.machine_setup, self.inventory_level, self.demand)
-        
-        # self.total_cost['setup_costs'] = 0
-        # self.total_cost['holding_costs'] = 0
-        
-        reward = -sum([ele for key, ele in self.total_cost.items()])
-        #reward = -self.total_cost['lost_sales']
-        
-        #reward = np.abs(action)
-        
-        self.current_step += 1
-        done = self.current_step == self.T
-        obs = self._next_observation()
-
-        return obs, reward, done, self.total_cost
-
-    def _next_observation(self):
-        """
-        Returns the next demand
-        """
-        obs = SimplePlant._next_observation(self)
-        #obs['last_inventory_level'] = copy.copy(self.last_inventory)
-        if isinstance(obs, dict):    
-            if not self.dict_obs:
-                obs = np.concatenate(
-                    (
-                        obs['inventory_level'], # n_items size
-                        obs['machine_setup'], # n_machine size
-                        #obs['last_inventory_level']# n_items size
-                    )
-                )
-        else:
-            if self.dict_obs:
-                raise('Change dict_obst to False')
-        return obs
-
-
 class PDPPOAgent():
-    def __init__(self, env: SimplePlant, settings: dict):
+    def __init__(self, env, settings: dict):
         self.env = env
-
         self.model_name = settings['model_name']
         self.experiment_name = settings['experiment_name']
         self.parallelization = settings['parallelization']
@@ -143,22 +59,21 @@ class PDPPOAgent():
         ## Note : print/log frequencies should be > than self.max_ep_len
     
         ################ PDPPO hyperparameters ################
-        self.update_timestep = self.max_ep_len * 6      # update policy every n timesteps
-        self.K_epochs = 40               # update policy for K epochs in one PDPPO update
+        self.update_timestep = int(self.max_ep_len*5)      # update policy every n timesteps
+        self.K_epochs = 50               # update policy for K epochs in one PDPPO update
+        self.buffer_size_mul = 5        # buffer size multiplier
+
+        self.eps_clip = 0.2          # clip parameter for PDPPO
+        self.gamma = 0.90            # discount factor
     
-        self.eps_clip = 0.21          # clip parameter for PDPPO
-        self.gamma = 0.991            # discount factor
-    
-        self.lr_actor = 0.0004      # learning rate for actor network
-        self.lr_critic = 0.0012       # learning rate for critic network
+        self.lr_actor = 0.00055       # learning rate for actor network
+        self.lr_critic = 0.001       # learning rate for critic network
     
         self.random_seed = 0         # set random seed if required (0 = no random seed)
         #####################################################
         self.run_num_pretrained = 0      #### change this to prevent overwriting weights in same self.experiment_name folder
         
         print("training environment name : " + self.experiment_name + '_PDPPO')
-        
-        
     
         # state space dimension
         self.state_dim = self.env.observation_space.n
@@ -170,7 +85,7 @@ class PDPPOAgent():
             self.action_dim = self.env.action_space.n
 
         self.pdppo_agent = PDPPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, copy.copy(self.env), self.has_continuous_action_space,self.tau, self.action_std)
-        
+
        
     ################################### Training ###################################
     def learn(self,n_episodes = 100000):
@@ -236,7 +151,7 @@ class PDPPOAgent():
             print("--------------------------------------------------------------------------------------------")
             print("starting std of action distribution : ", self.action_std)
             print("decay rate of std of action distribution : ", self.action_std_decay_rate)
-            print("minimum std of action distribution : ", min_self.action_std)
+            print("minimum std of action distribution : ", self.action_std)
             print("decay frequency of std of action distribution : " + str(self.action_std_decay_freq) + " timesteps")
         else:
             print("Initializing a discrete action space policy")
@@ -298,9 +213,8 @@ class PDPPOAgent():
             state = binary_array
 
             for t in range(1, self.max_ep_len+1):
-    
                 # select action with policy
-                action = self.pdppo_agent.select_action(state,self.tau)
+                action, post_reward = self.pdppo_agent.select_action(state,self.tau)
                 state, reward, done, _ = env.step(action.item())
 
                 binary_array = np.zeros(self.state_dim, dtype=int)
@@ -308,7 +222,7 @@ class PDPPOAgent():
                 state = binary_array
 
                 # saving reward and is_terminals
-                self.pdppo_agent.buffer.rewards.append(reward)
+                self.pdppo_agent.buffer.rewards.append(reward - post_reward.item()) # we save the reward without the post decision reward
                 self.pdppo_agent.buffer.is_terminals.append(done)
     
                 time_step +=1
@@ -317,6 +231,9 @@ class PDPPOAgent():
                 # update PDPPO agent
                 if time_step % self.update_timestep == 0:
                     self.pdppo_agent.update()
+                
+                    if time_step > self.update_timestep*self.buffer_size_mul:
+                        self.pdppo_agent.buffer.clear(self.update_timestep)
     
                 # if continuous action space; then decay action std of ouput action distribution
                 if self.has_continuous_action_space and time_step % self.action_std_decay_freq == 0:
@@ -352,8 +269,8 @@ class PDPPOAgent():
                     print("--------------------------------------------------------------------------------------------")
                     #print("saving model at : " + checkpoint_path)
                     self.pdppo_agent.save(checkpoint_path)
-                    #print("model saved")
-                    print("PDPPO Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
+                    print("model saved")
+                    print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
                     print("--------------------------------------------------------------------------------------------")
     
                 # break; if the episode is over
@@ -379,20 +296,6 @@ class PDPPOAgent():
         print("Total training time  : ", end_time - start_time)
         print("============================================================================================")
 
-    def get_action(self,state):
-        if isinstance(state, dict):    
-            if not self.dict_obs:
-                state = np.concatenate(
-                    (
-                        state['inventory_level'], # n_items size
-                        state['machine_setup'], # n_machine size
-                    )
-                )
-        else:
-            if self.dict_obs:
-                raise('Change dict_obst to False')
-        return self.pdppo_agent.select_action(state,self.tau)
-    
     def load_agent(self,path):
         #directory = "PDPPO_preTrained" + '/' + env_name + '/'
         directory = self.LOG_DIR

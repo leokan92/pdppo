@@ -144,7 +144,7 @@ class PPOAgent_two_critics():
         self.K_epochs = 60               # update policy for K epochs in one PPO_two_critics update
     
         self.eps_clip = 0.2          # clip parameter for PPO_two_critics
-        self.gamma = 0.99            # discount factor
+        self.gamma = 0.9             # discount factor
     
         self.lr_actor = 0.00055       # learning rate for actor network
         self.lr_critic = 0.001       # learning rate for critic network
@@ -233,7 +233,7 @@ class PPOAgent_two_critics():
             print("--------------------------------------------------------------------------------------------")
             print("starting std of action distribution : ", self.action_std)
             print("decay rate of std of action distribution : ", self.action_std_decay_rate)
-            print("minimum std of action distribution : ", min_self.action_std)
+            print("minimum std of action distribution : ", min(self.action_std))
             print("decay frequency of std of action distribution : " + str(self.action_std_decay_freq) + " timesteps")
         else:
             print("Initializing a discrete action space policy")

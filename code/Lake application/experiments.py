@@ -6,37 +6,38 @@ import sys
 import json
 import random
 import gym
+import torch
 
 BASE_DIR = os.path.dirname(os.path.abspath('__file__'))
 AGENTS_DIR = os.path.join(BASE_DIR,'agents')
 sys.path.append(AGENTS_DIR)
 
-from agents.PPO import PPO
-from agents.PDPPO import PDPPO
+from agents.PDPPOAgent import PDPPOAgent
+from agents.PPOAgent import PPOAgent
 
 import numpy as np
 from agents import *
-from agents import StochasticProgrammingAgent, AdpAgentHD3
-from agents import StableBaselineAgent, MultiAgentRL, EnsembleAgent, PerfectInfoAgent,PSOagent,AdpAgentHD, PPOAgent
-from test_functions import *
-from scenarioManager.stochasticDemandModel import StochasticDemandModel
-
 
 #'15items_5machines_i100','25items_10machines'
 
 if __name__ == '__main__':
-    for i in range(0,5):
-        
-        experiment_name = 'frozen_lake'
-        
+    for i in range(27,32):
         # Setting the seeds
-        np.random.seed(1)
-        random.seed(10)
+        np.random.seed(i)
+        random.seed(i)
+        torch.manual_seed(i)
+
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(i)
+            torch.cuda.manual_seed_all(i)  # if you are using multi-GPU.
+
         
         from gym.envs.toy_text.frozen_lake import generate_random_map
 
         # Models setups:
-        env = gym.make('FrozenLake-v1', desc=generate_random_map(size=8), is_slippery=True)
+        env = gym.make('FrozenLake-v1', desc=generate_random_map(size=10), is_slippery=True)
+
+        experiment_name = 'frozen_lake'
 
         setting_sol_method = {
             'discount_rate': 0.99,
@@ -47,7 +48,12 @@ if __name__ == '__main__':
             'dict_obs': False # To be employed if dictionary observations are necessary
         }
         # Parameters for the RL:
-        
+
+        setting_sol_method['regressor_name'] = 'plain_matrix_I2xM1'
+        setting_sol_method['discount_rate'] = 0.99
+        setting_sol_method['run'] = i
+        agents = []
+    
         training_epochs_RL = 200000
         
         setting_sol_method['parallelization'] = False
