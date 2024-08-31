@@ -130,6 +130,7 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                     break
             if goal_position:
                 break
+        self.goal_position = goal_position
 
         def proximity_reward(current_row, current_col):
             goal_row, goal_col = goal_position
@@ -140,92 +141,19 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
             newrow, newcol = inc(row, col, a)
             newstate = to_s(newrow, newcol)
             newletter = desc[newrow, newcol]
-            terminated = bytes(newletter) in b"GH"
+            terminated = bytes(newletter) in b"G"
             reward = float(newletter == b"G")
             if not terminated:
-                reward = proximity_reward(newrow, newcol)
+                reward = proximity_reward(newrow, newcol) + float(newletter == b"H")* -(1/(nrow+ncol))
             return newstate, reward, terminated
 
-        # def update_probability_matrix(row, col, action):
-        #     newrow, newcol = inc(row, col, action)
-        #     newstate = to_s(newrow, newcol)
-        #     newletter = desc[newrow, newcol]
-        #     done = bytes(newletter) in b"GH"
-        #     reward = float(newletter == b"G")
-        #     return newstate, reward, done
-
-        # for row in range(nrow):
-        #     for col in range(ncol):
-        #         s = to_s(row, col)
-        #         for a in range(4):
-        #             li = P[s][a]
-        #             letter = desc[row, col]
-        #             if letter in b"GH":
-        #                 li.append((1.0, s, 0, True))
-        #             else:
-        #                 if is_slippery:
-        #                     for b in [(a - 1) % 4, a, (a + 1) % 4]:
-        #                         li.append(
-        #                             (1.0 / 3.0, *update_probability_matrix(row, col, b))
-        #                         )
-        #                 else:
-        #                     li.append((1.0, *update_probability_matrix(row, col, a)))
-        
         np.random.seed(42)  # Set a seed for reproducibility
         tile_probabilities = np.random.dirichlet(np.ones(4), size=(nrow, ncol))
 
         def to_row_col(s):
             return divmod(s, ncol)
 
-        # for row in range(nrow):
-        #     for col in range(ncol):
-        #         s = to_s(row, col)
-        #         for a in range(4):
-        #             li = P[s][a]
-        #             letter = desc[row, col]
-        #             if letter in b"GH":
-        #                 li.append((1.0, s, 0, True))
-        #             else:
-        #                 if is_slippery:
-        #                     # First, the agent moves in the desired direction
-        #                     newstate, reward, terminated = update_probability_matrix(row, col, a)
-        #                     if terminated:
-        #                         li.append((1.0, newstate, reward, terminated))
-        #                     else:
-        #                         # After the first move, slippery condition causes a random additional movement
-        #                         row2, col2 = to_row_col(newstate)
-        #                         for b in range(4):
-        #                             li.append(
-        #                                 (1.0 / 4.0, *update_probability_matrix(row2, col2, b))
-        #                             )
-        #                 else:
-        #                     li.append((1.0, *update_probability_matrix(row, col, a)))
-
-        # for row in range(nrow):
-        #     for col in range(ncol):
-        #         s = to_s(row, col)
-        #         for a in range(4):
-        #             li = P[s][a]
-        #             letter = desc[row, col]
-        #             if letter in b"GH":
-        #                 li.append((1.0, s, 0, True))
-        #             else:
-        #                 if is_slippery:
-        #                     # First, the agent moves in the desired direction
-        #                     newstate, reward, terminated = update_probability_matrix(row, col, a)
-        #                     if terminated:
-        #                         li.append((1.0, newstate, reward, terminated))
-        #                     else:
-        #                         # After the first move, slippery condition causes an additional movement
-        #                         row2, col2 = to_row_col(newstate)
-        #                         for b, prob in enumerate(tile_probabilities[row2, col2]):
-        #                             li.append(
-        #                                 (prob, *update_probability_matrix(row2, col2, b))
-        #                             )
-        #                 else:
-        #                     li.append((1.0, *update_probability_matrix(row, col, a)))
-
-        base_slip_prob=0.3
+        base_slip_prob= 0.50
         
         for row in range(nrow):
             for col in range(ncol):
@@ -245,40 +173,48 @@ class FrozenLakeEnv(discrete.DiscreteEnv):
                                 # After the first move, slippery condition causes an additional movement
                                 row2, col2 = to_row_col(newstate)
                                 for b, prob in enumerate(tile_probabilities[row2, col2]):
+                                    newstate_post, reward_pos, terminated_post = update_probability_matrix(row2, col2, b)
                                     li.append(
-                                        (base_slip_prob * prob, *update_probability_matrix(row2, col2, b))
+                                        (base_slip_prob * prob, newstate_post, reward_pos + reward, terminated_post)
                                     )
                                 # Add the remaining probability for staying at the newstate
                                 li.append((1.0 - base_slip_prob, newstate, reward, False))
                         else:
                             li.append((1.0, *update_probability_matrix(row, col, a)))
+
+        self.P = P
         super(FrozenLakeEnv, self).__init__(nS, nA, P, isd)
 
     def get_post_decision_state(self, s, a):
-            def inc(row, col, a):
-                if a == LEFT:
-                    col = max(col - 1, 0)
-                elif a == DOWN:
-                    row = min(row + 1, self.nrow - 1)
-                elif a == RIGHT:
-                    col = min(col + 1, self.ncol - 1)
-                elif a == UP:
-                    row = max(row - 1, 0)
-                return (row, col)
+        def proximity_reward(current_row, current_col):
+            goal_row, goal_col = self.goal_position
+            distance = abs(goal_row - current_row) + abs(goal_col - current_col)
+            return 1.0 / (1.0 + distance)
 
-            def to_s(row, col):
-                return row * self.ncol + col
+        def inc(row, col, a):
+            if a == LEFT:
+                col = max(col - 1, 0)
+            elif a == DOWN:
+                row = min(row + 1, self.nrow - 1)
+            elif a == RIGHT:
+                col = min(col + 1, self.ncol - 1)
+            elif a == UP:
+                row = max(row - 1, 0)
+            return (row, col)
 
-            def to_row_col(s):
-                row = s // self.ncol
-                col = s % self.ncol
-                return row, col
+        def to_s(row, col):
+            return row * self.ncol + col
 
-            row, col = to_row_col(s)
-            next_row, next_col = inc(row, col, a)
-            next_s = to_s(next_row, next_col)
-            post_reward = self.proximity_reward(next_row, next_col)
-            return next_s, post_reward
+        def to_row_col(s):
+            row = s // self.ncol
+            col = s % self.ncol
+            return row, col
+
+        row, col = to_row_col(s)
+        next_row, next_col = inc(row, col, a)
+        next_s = to_s(next_row, next_col)
+        next_r = proximity_reward(next_row, next_col)
+        return next_s, next_r
     
     def render(self, mode="human"):
         outfile = StringIO() if mode == "ansi" else sys.stdout
