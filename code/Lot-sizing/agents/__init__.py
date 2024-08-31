@@ -3,7 +3,6 @@ from .PDPPOAgent import PDPPOAgent
 from .PPOAgent_two_critics import PPOAgent_two_critics
 from .PDPPOAgent_one_critic import PDPPOAgent_one_critic
 from .stableBaselineAgents import StableBaselineAgent
-from .stableBaselineAgents import StableBaselineAgent
 from .perfectInfoAgent import PerfectInfoAgent
 
 __all__ = [
@@ -11,7 +10,7 @@ __all__ = [
     "PerfectInfoAgent",	
     "StableBaselineAgent",
     "PPOAgent",
-    "PPOAgent_two_critics",
     "PDPPOAgent",
+    "PPOAgent_two_critics",
     "PDPPOAgent_one_critic"
 ]

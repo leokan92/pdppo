@@ -14,13 +14,13 @@ from torch.distributions import Categorical
 print("============================================================================================")
 # set device to cpu or cuda
 device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
-print("============================================================================================")
+# if(torch.cuda.is_available()): 
+#     device = torch.device('cuda:0') 
+#     torch.cuda.empty_cache()
+#     print("Device set to : " + str(torch.cuda.get_device_name(device)))
+# else:
+#     print("Device set to : cpu")
+# print("============================================================================================")
 
 
 ################################## PPO Policy ##################################
@@ -33,13 +33,13 @@ class RolloutBuffer:
         self.state_values = []
         self.is_terminals = []
     
-    def clear(self):
-        del self.actions[:]
-        del self.states[:]
-        del self.logprobs[:]
-        del self.rewards[:]
-        del self.state_values[:]
-        del self.is_terminals[:]
+    def clear(self,lag):
+        del self.actions[lag:]
+        del self.states[lag:]
+        del self.logprobs[lag:]
+        del self.rewards[lag:]
+        del self.state_values[lag:]
+        del self.is_terminals[lag:]
 
 
 class ActorCritic(nn.Module):
@@ -107,7 +107,7 @@ class ActorCritic(nn.Module):
         return action.detach(), action_logprob.detach(), state_val.detach()
     
     def evaluate(self, state, action):
-
+        state = torch.unsqueeze(state,1)
         logits = self.actor(state)
         action_probs = nn.functional.softmax(logits, dim=-1)
         dist = Categorical(action_probs)
@@ -177,7 +177,7 @@ class PPO:
             state = state.float() 
             state = torch.unsqueeze(state, 1).T
             action, action_logprob, state_val = self.policy_old.act(state)
-        
+
         self.buffer.states.append(state)
         self.buffer.actions.append(action)
         self.buffer.logprobs.append(action_logprob)
@@ -194,10 +194,8 @@ class PPO:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
-            
-        # Normalizing the rewards
+
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         # convert list to tensor
         old_states = torch.squeeze(torch.stack(self.buffer.states, dim=1)).detach().to(device)
@@ -225,7 +223,7 @@ class PPO:
             surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages.unsqueeze(1)
 
             # final loss of clipped objective PPO
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.012 * dist_entropy
+            loss = -torch.min(surr1, surr2) + 0.7 * self.MseLoss(state_values, rewards) - 0.0010 * dist_entropy
             
             loss_numpy = loss.detach().cpu().numpy()
             
@@ -236,9 +234,6 @@ class PPO:
             
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())
-
-        # clear buffer
-        self.buffer.clear()
     
     def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)

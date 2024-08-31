@@ -76,61 +76,27 @@ def check_all_zeros(matrix):
         if sum(np.array(matrix)[:,i]) == 0:
             return warnings.warn("The generated matrix contains columns with zeros only")
 
-# time_horizon = 5
-# n_items = 100
-# n_machines = 80
-
-# #initial_setup = generate_matrix(1,n_machines,n_items,0,0.4)
-# initial_setup = generate_matrix(1,n_machines,n_items,0,0.4)
-# machine_production = generate_matrix(n_machines,n_items,4,0,0.4)
-# check_all_zeros(machine_production)
-# max_inventory_level = generate_matrix(1,n_items,10,10,0.5)
-# initial_inventory_level = generate_matrix(1,n_items,0,0,0.05)
-# holding_costs = generate_matrix(1,n_items,0.1,0.1,0.5)
-# lost_sales_costs = generate_matrix(1,n_items,3,1,0.5)
-# demand_distribution = {
-#         "name": "binomial",
-#         "n": 4,
-#         "p": 0.4
-#     }
-# setup_costs = generate_matrix(n_machines,n_items,2,1,0.2)
-# setup_loss = generate_matrix(n_machines,n_items,1,1,0.7)
-# file_name = f'setting_{n_items}items_{n_machines}machines_t{time_horizon}'
-
-# generate_json_file( time_horizon,
-#                     n_items,
-#                     n_machines,
-#                     initial_setup,
-#                     machine_production,
-#                     max_inventory_level,
-#                     initial_inventory_level,
-#                     holding_costs,
-#                     lost_sales_costs,
-#                     demand_distribution,
-#                     setup_costs,
-#                     setup_loss,
-#                     file_name)
-
 time_horizon = 100
 n_items = 25
-n_machines = 10
+n_machines = 15
 
 #initial_setup = generate_matrix(1,n_machines,n_items,0,0.4)
 initial_setup = generate_matrix(1,n_machines,n_items,0,0.4)
 machine_production = generate_matrix(n_machines,n_items,40,0,0.4)
 check_all_zeros(machine_production)
 max_inventory_level = generate_matrix(1,n_items,100,100,0.5)
-initial_inventory_level = generate_matrix(1,n_items,0,0,0.05)
+initial_inventory_level = generate_matrix(1,n_items,50,0,0.05)
 holding_costs = generate_matrix(1,n_items,0.01,0.01,0.5)
-lost_sales_costs = generate_matrix(1,n_items,0.2,0.2,0.5)
+lost_sales_costs = generate_matrix(1,n_items,0.3,0.1,0.5)
 demand_distribution = {
         "name": "binomial",
         "n": 20,
         "p": 0.4
     }
-setup_costs = generate_matrix(n_machines,n_items,2,1,0.2)
-setup_loss = generate_matrix(n_machines,n_items,1,1,0.7)
-file_name = f'setting_{n_items}items_{n_machines}machines'
+setup_costs = generate_matrix(n_machines,n_items,30,15,0.2)
+setup_loss = generate_matrix(n_machines,n_items,3,1,0.7)
+file_name = f'setting_{n_items}items_{n_machines}machines_t{time_horizon}_i{max_inventory_level[0]}'
+
 generate_json_file( time_horizon,
                     n_items,
                     n_machines,
@@ -144,6 +110,40 @@ generate_json_file( time_horizon,
                     setup_costs,
                     setup_loss,
                     file_name)
+
+# time_horizon = 100
+# n_items = 25
+# n_machines = 10
+
+# #initial_setup = generate_matrix(1,n_machines,n_items,0,0.4)
+# initial_setup = generate_matrix(1,n_machines,n_items,0,0.4)
+# machine_production = generate_matrix(n_machines,n_items,40,0,0.4)
+# check_all_zeros(machine_production)
+# max_inventory_level = generate_matrix(1,n_items,100,100,0.5)
+# initial_inventory_level = generate_matrix(1,n_items,0,0,0.05)
+# holding_costs = generate_matrix(1,n_items,0.01,0.01,0.5)
+# lost_sales_costs = generate_matrix(1,n_items,0.2,0.2,0.5)
+# demand_distribution = {
+#         "name": "binomial",
+#         "n": 20,
+#         "p": 0.4
+#     }
+# setup_costs = generate_matrix(n_machines,n_items,2,1,0.2)
+# setup_loss = generate_matrix(n_machines,n_items,1,1,0.7)
+# file_name = f'setting_{n_items}items_{n_machines}machines'
+# generate_json_file( time_horizon,
+#                     n_items,
+#                     n_machines,
+#                     initial_setup,
+#                     machine_production,
+#                     max_inventory_level,
+#                     initial_inventory_level,
+#                     holding_costs,
+#                     lost_sales_costs,
+#                     demand_distribution,
+#                     setup_costs,
+#                     setup_loss,
+#                     file_name)
 
 
 # for m in [2,5,10]:
