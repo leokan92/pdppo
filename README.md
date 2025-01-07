@@ -1,32 +1,22 @@
 # Post-Decision Proximal Policy Optimization with Dual Critic Networks for Accelerated Learning
 
-This repository contains code and resources the research developed at University of São Paulo (USP) and Politecnico di Torino (Polito) on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game. 
+This repository contains code and resources for research on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game.
 
 ## Project Structure
-This repository consists of two main directories: `Lot-sizing` and `Lake application`, each containing the related files and folders. 
-
-
+This repository consists of two main directories: `Lot-sizing` and `Lake application`, each containing the related files and folders.
 
 ### Lot-Sizing
 
 `Lot-sizing` directory holds the following subdirectories:
 
 - **agents**: Holds various versions of PDPPO agent implementations and utility functions.
-
 - **cfg_env**: Includes environment settings and configurations files for the project in JSON format. Additionally, `generate_setting.py` is used for generating new environment settings.
-
 - **cfg_sol**: Stores the solution settings in `sol_setting.json`.
-
 - **envs**: Contains different environment definitions for the problem, like `simplePlant.py` and `singleSequenceDependentMachinePlant.py`.
-
 - **logs**: Keeps the log files for the model training and evaluation.
-
 - **models**: Stores various optimization models.
-
 - **results**: After executing the experiments, the results are saved in this directory.
-
 - **scenarioManager**: Manages different scenario setups.
-
 - **test_functions**: Stores functions to validate the models and generate plots and tables.
 
 ### Lake Application
@@ -34,22 +24,17 @@ This repository consists of two main directories: `Lot-sizing` and `Lake applica
 `Lake application` directory holds the following subdirectories:
 
 - **agents**: Contains various versions of PDPPO agent implementations for the Lake problem.
-
 - **envs**: Contains environment definitions, like `frozen_lake.py`.
-
 - **logs**: Contains the log files and results from the model training and evaluation for different scenarios.
-
 - **results**: Stores the output from experiments and relevant figures.
 
-- Root level scripts `experiments.py`, `generate_tables.py` and `plot_figure.py` are used for running experiments, generating output tables and plotting results respectively.
-
+Root level scripts `experiments.py`, `generate_tables.py` and `plot_figure.py` are used for running experiments, generating output tables and plotting results respectively.
 
 ## Repository structure:
 
 The main components of the repository are as follows:
 
 ```graphql
-
 ├───Lake application
 │   ├───agents        # contains the implementations of various agents
 │   ├───envs          # contains the FrozenLake environment implementation
@@ -68,7 +53,6 @@ The main components of the repository are as follows:
     ├───results       # contains the results of the agent's performance
     ├───scenarioManager # manages different scenarios for the Lot-sizing environment
     └───test_functions # contains test functions for the Lot-sizing environment
-
 ```
 
 ## Requirements:
@@ -82,7 +66,6 @@ This project uses the following main dependencies:
 - [torch](https://pytorch.org/)
 - gurobipy (not included in `requirements.txt` due to separate licensing)
 
-
 ## How to Reproduce
 
 1. Clone the repository:
@@ -91,13 +74,13 @@ This project uses the following main dependencies:
 git clone https://github.com/username/repository.git
 ```
 
-## Navigate into the project directory:
+2. Navigate into the project directory:
 
 ```
 cd repository
 ```
 
-Install the required Python packages. This project was developed with Python 3.8. Substitute requirements.txt with your actual requirements file:
+3. Install the required Python packages. This project was developed with Python 3.8. Substitute requirements.txt with your actual requirements file:
 
 ```
 pip install -r requirements.txt
@@ -105,38 +88,33 @@ pip install -r requirements.txt
 
 NOTE: You might need to replace the frozen environment file in your environment path with the frozen_lake.py provided in this repository for the Lake application to work properly.
 
-
-Run the experiments:
+4. Run the experiments:
 
 ```
 python ./code/Lot-sizing/experiments.py
 python ./code/Lake application/experiments.py
 ```
 
-Generate the tables:
-
+5. Generate the tables:
 
 ```
 python ./code/Lot-sizing/generate_tables.py
 python ./code/Lake application/generate_tables.py
 ```
 
-Plot the figures:
+6. Plot the figures:
 
 ```
 python ./code/Lot-sizing/plot_figure.py
 python ./code/Lake application/plot_figure.py
 ```
 
-
 You can find the results of the experiments in the results directories in both Lot-sizing and Lake application directories.
-
 
 ## Reproducing Results
 To reproduce the results in the logs and results folders, you would need to run the experiments with the same hyperparameters and seeds.
 
 Please note that due to the stochastic nature of the environments and training process, the results might not be identical, but they should be within a similar range.
-
 
 ## Paper Reference
 
@@ -144,29 +122,14 @@ To reference the paper associated with this work, please use the following citat
 
 ```scss
 To be included
-
 ```
 
-## Paper Availability
-
-To access the full paper, please visit the following link: [arXiv](https://arxiv.org/abs/2208.00765)
-
-
-This link will direct you to the arXiv preprint version of the paper.
-
-Feel free to click on the link and explore the paper for a comprehensive understanding of the work.
-
 ## Contact
-For any additional questions, you can reach me at leonardo.felizardo@usp.br
-
+For any additional questions, please open an issue in the repository.
 
 ## References
 
-This works employed the environment provided in our previous work:
+and modified the PPO implementation in PyTorch from:
 
-[Discrete lot-sizing](https://github.com/EdoF90/discrete_lot_sizing)
-
-and we modify the ppo implementation in pytorch of:
-
-[PPO-Pytorch](https://github.com/nikhilbarhate99/PPO-PyTorch)
+[PPO-PyTorch](https://github.com/nikhilbarhate99/PPO-PyTorch)
 
