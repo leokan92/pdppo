@@ -1,5 +1,13 @@
 # Post-Decision Proximal Policy Optimization with Dual Critic Networks for Accelerated Learning
 
+## Paper Reference
+
+To reference the paper associated with this work, please use the following citation:
+
+```scss
+To be included
+```
+
 This repository contains code and resources for research on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game.
 
 ## Project Structure
@@ -116,20 +124,15 @@ To reproduce the results in the logs and results folders, you would need to run 
 
 Please note that due to the stochastic nature of the environments and training process, the results might not be identical, but they should be within a similar range.
 
-## Paper Reference
-
-To reference the paper associated with this work, please use the following citation:
-
-```scss
-To be included
-```
 
 ## Contact
-For any additional questions, please open an issue in the repository.
+For any additional questions, please open an issue in the repository or contact felizardo@ita.br
 
 ## References
 
 and modified the PPO implementation in PyTorch from:
+
+[Lot-sizing Environment](https://github.com/EdoF90/discrete_lot_sizing)
 
 [PPO-PyTorch](https://github.com/nikhilbarhate99/PPO-PyTorch)
 
