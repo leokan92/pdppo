@@ -8,6 +8,8 @@ To reference the paper associated with this work, please use the following citat
 To be included
 ```
 
+The paper is available at [Arxiv](arxiv.org/abs/2504.05150)
+
 This repository contains code and resources for research on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game.
 
 ## Project Structure
