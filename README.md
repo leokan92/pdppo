@@ -132,7 +132,7 @@ For any additional questions, please open an issue in the repository or contact 
 
 ## References
 
-and modified the PPO implementation in PyTorch from:
+The Lot sizing environment and the PPO implementation in PyTorch can be found in:
 
 [Lot-sizing Environment](https://github.com/EdoF90/discrete_lot_sizing)
 
