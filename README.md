@@ -5,10 +5,18 @@
 To reference the paper associated with this work, please use the following citation:
 
 ```scss
-To be included
+@misc{felizardo2025reinforcementlearningmethodenvironments,
+      title={A Reinforcement Learning Method for Environments with Stochastic Variables: Post-Decision Proximal Policy Optimization with Dual Critic Networks}, 
+      author={Leonardo Kanashiro Felizardo and Edoardo Fadda and Paolo Brandimarte and Emilio Del-Moral-Hernandez and Mariá Cristina Vasconcelos Nascimento},
+      year={2025},
+      eprint={2504.05150},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2504.05150}, 
+}
 ```
 
-The paper is available at [Arxiv](https://huggingface.co/papers/2504.05150)
+The paper is available at [Arxiv](https://arxiv.org/abs/2504.05150)
 
 This repository contains code and resources for research on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game.
 
