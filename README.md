@@ -5,18 +5,20 @@
 To reference the paper associated with this work, please use the following citation:
 
 ```scss
-@misc{felizardo2025reinforcementlearningmethodenvironments,
-      title={A Reinforcement Learning Method for Environments with Stochastic Variables: Post-Decision Proximal Policy Optimization with Dual Critic Networks}, 
-      author={Leonardo Kanashiro Felizardo and Edoardo Fadda and Paolo Brandimarte and Emilio Del-Moral-Hernandez and Mariá Cristina Vasconcelos Nascimento},
-      year={2025},
-      eprint={2504.05150},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2504.05150}, 
-}
+@INPROCEEDINGS{11227565,
+  author={Felizardo, Leonardo Kanashiro and Fadda, Edoardo and Brandimarte, Paolo and Del-Moral-Hernandez, Emilio and Nascimento, Mariá Cristina Vasconcelos},
+  booktitle={2025 International Joint Conference on Neural Networks (IJCNN)}, 
+  title={A Reinforcement Learning Method for Environments with Stochastic Variables: Post-Decision Proximal Policy Optimization with Dual Critic Networks}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-8},
+  keywords={Accuracy;Uncertainty;Neural networks;Stochastic processes;Production;Performance gain;Stability analysis;Complexity theory;Optimization;Standards;Reinforcement learning;Post-decision variables;Sequential decision making;Proximal policy optimization;Stochastic Discrete Lot-sizing;Model-based},
+  doi={10.1109/IJCNN64981.2025.11227565}}
+
 ```
 
-The paper is available at [Arxiv](https://arxiv.org/abs/2504.05150)
+The paper pre print version is available at [Arxiv](https://arxiv.org/abs/2504.05150) and the reviewed version published in the IJCNN 2025 proceedings at the [IEEE](https://ieeexplore.ieee.org/document/11227565).
 
 This repository contains code and resources for research on using reinforcement learning, particularly the Post-Decision Proximal Policy Optimization (PDPPO), for the Stochastic Discrete Lot-Sizing Problem and a Frozen-Lake game.
 
